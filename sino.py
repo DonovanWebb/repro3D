@@ -21,7 +21,7 @@ def sino(image):
     ax1.set_title("Original")
     ax1.imshow(image, cmap=plt.cm.Greys_r)
 
-    theta = np.linspace(0., 180., max(image.shape), endpoint=False)
+    theta = np.linspace(0., 360., 2*max(image.shape), endpoint=False)
     sinogram = radon(image, theta=theta, circle=True)
     ax2.set_title("Radon transform\n(Sinogram)")
     ax2.set_xlabel("Projection angle (deg)")
@@ -113,6 +113,39 @@ def compare3(sin1, sin2, sin3):
     axes[2,0], loc = find_min(matyz, axes[2,0])
     return fig
 
+def compare3_1(sin1, sin2, sin3):
+    matxy = np.array([])
+    for x in sin1.T:
+        for y in sin2.T:
+            correl = np.cbrt(((x-y)**2).mean(axis=0))
+            matxy = np.append(matxy,correl)
+    matxy = np.reshape(matxy, (int(np.sqrt(matxy.shape[0])),int(np.sqrt(matxy.shape[0]))))
+
+    matxz = np.array([])
+    for x in sin1.T:
+        for z in sin3.T:
+            correl = np.cbrt(((x-z)**2).mean(axis=0))
+            matxz = np.append(matxz,correl)
+    matxz = np.reshape(matxz, (int(np.sqrt(matxz.shape[0])),int(np.sqrt(matxz.shape[0]))))
+
+    matyy = np.array([])
+    for y in sin2.T:
+        for z in sin2.T:
+            correl = np.cbrt(((y-y)**2).mean(axis=0))
+            matyy = np.append(matyy,correl)
+    matyy = np.reshape(matyy, (int(np.sqrt(matyy.shape[0])),int(np.sqrt(matyy.shape[0]))))
+    
+    fig, axes = plt.subplots(2, 3)
+    axes[0, 0].imshow(matxz)
+    axes[0, 1].imshow(sin1.T)
+    axes[0, 2].imshow(matxy)
+    axes[1, 0].imshow(sin3)
+    axes[1, 1].imshow(matyy)
+    axes[1, 2].imshow(sin2)
+    axes[0,0], loc = find_min(matxz, axes[0,0])
+    axes[0,2], loc = find_min(matxy, axes[0,2])
+    return fig
+
 def compare3d(sin1, sin2, sin3):
     mat = np.array([])
     x_ = 0
@@ -180,12 +213,12 @@ with mrc.open('projections/0_0.mrcs') as f:
 sin1, th, fig1 = sino(img1)
 # fig2 = recon(sin1, th, img1)
 
-with mrc.open('projections/0_4.mrcs') as f:
+with mrc.open('projections/0_1.mrcs') as f:
     img2 = f.data
 sin2, th, fig2 = sino(img2)
 # fig4 = recon(sin2, th, img2)
 
-with mrc.open('projections/0_3.mrcs') as f:
+with mrc.open('projections/0_2.mrcs') as f:
     img3 = f.data
 sin3, th, fig3 = sino(img3)
 # fig2 = recon(sin3, th, img3)
@@ -197,16 +230,19 @@ flat_sin3 = flatten_sin(sin3)
 mat = compare(sin1, sin2)
 
 #mat3d = compare3d(sin1, sin2, sin3)
-fig3 = compare3(sin1, sin2, sin3)
+#fig3 = compare3(sin1, sin2, sin3)
+fig01 = compare3_1(sin1, sin2, sin3)
+fig02 = compare3_1(sin2, sin1, sin3)
+fig03 = compare3_1(sin3, sin2, sin1)
 
 
 #mat = scipy.signal.correlate2d(sin1,sin2, mode='same')
 #mat = scipy.signal.correlate2d(img1,img2, mode='same')
 
-plt.figure(6)
+plt.figure(8)
 plt.imshow(mat)
 plt, loc = find_min(mat, plt)
-plt.figure(7)
+plt.figure(9)
 plt.plot(sin1.T[loc[0]])
 plt.plot(sin2.T[loc[1]])
 plt.show()

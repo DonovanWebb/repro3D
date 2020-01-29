@@ -15,6 +15,21 @@ parser.add_argument('-e','--end', required=True)
 args = parser.parse_args()
 print(f'{args.start} - {args.end}')
 
+def rotation_matrix(axis, theta):
+    """
+    Return the rotation matrix associated with counterclockwise rotation about
+    the given axis by theta radians.
+    """
+    axis = np.asarray(axis)
+    axis = axis / math.sqrt(np.dot(axis, axis))
+    a = math.cos(theta / 2.0)
+    b, c, d = -axis * math.sin(theta / 2.0)
+    aa, bb, cc, dd = a * a, b * b, c * c, d * d
+    bc, ad, ac, ab, bd, cd = b * c, a * d, a * c, a * b, b * d, c * d
+    return np.array([[aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac)],
+                     [2 * (bc - ad), aa + cc - bb - dd, 2 * (cd + ab)],
+                     [2 * (bd + ac), 2 * (cd - ab), aa + dd - bb - cc]])
+
 def crop(vol, dm):
     ds = vol.shape[0]
     diff = math.floor((ds - dm)/2)
@@ -28,7 +43,6 @@ def crop(vol, dm):
     diff = math.floor((ds - dm)/2)
     if diff > 0:
         vol = vol[:,:,diff:dm+diff]
-    print(vol.shape)
     return vol
     
 def save_part(part, name):
@@ -85,26 +99,54 @@ for i in range(int(args.start), int(args.end)):
     # plt.subplot(1,2,1)
     # plt.imshow(projection)
 
+    v = [1, 0, 0]
+    print(v)
+
+
+    # 1 ------------------------------------------------------------------------------------
     rot_vol = rotated_vol
-    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 5, axes=(0,1), reshape=True) # (0,1) (1,2) (0,2)
+
+    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 45, axes=(1,2), reshape=True) # (0,1) (1,2) (0,2)
+    axis = [1, 0, 0]
+    theta = (2*np.pi/360) * 90
+    v_ = np.dot(rotation_matrix(axis, theta), v)
     rotated_vol = crop(rotated_vol, min_dim)
 
+    # rotated_vol = scipy.ndimage.interpolation.rotate(rotated_vol, 20, axes=(1,2), reshape=True) # (0,1) (1,2) (0,2)
+    # axis = [1, 0, 0]
+    # theta = (2*np.pi/360) * 20
+    # v_ = np.dot(rotation_matrix(axis, theta), v_)
+    # print(v_)
+    # rotated_vol = crop(rotated_vol, min_dim)
+
     projection_flat = np.array([np.sum(rotated_vol[x,y,:]) for x in range(rotated_vol.shape[0]) for y in range(rotated_vol.shape[1])])
-
     projection = projection_flat.reshape(rotated_vol.shape[0],rotated_vol.shape[1])
-
     save_part(projection,f'{i}_1')
+    
 
-    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 10, axes=(0,1), reshape=True) # (0,1) (1,2) (0,2)
+
+    # 2 ------------------------------------------------------------------------------------
+    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 90, axes=(0,1), reshape=True) # (0,1) (1,2) (0,2)
+    axis = [0, 1, 0]
+    theta = (2*np.pi/360) * 90
+    v_ = np.dot(rotation_matrix(axis, theta), v)
+    rotated_vol = crop(rotated_vol, min_dim)
+
+    rotated_vol = scipy.ndimage.interpolation.rotate(rotated_vol, 45, axes=(1,2), reshape=True) # (0,1) (1,2) (0,2)
+    axis = [0, 1, 0]
+    theta = (2*np.pi/360) * 20
+    v_ = np.dot(rotation_matrix(axis, theta), v_)
+    print(v_)
     rotated_vol = crop(rotated_vol, min_dim)
 
     projection_flat = np.array([np.sum(rotated_vol[x,y,:]) for x in range(rotated_vol.shape[0]) for y in range(rotated_vol.shape[1])])
-
     projection = projection_flat.reshape(rotated_vol.shape[0],rotated_vol.shape[1])
-
     save_part(projection,f'{i}_2')
 
-    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 30, axes=(0,1), reshape=True) # (0,1) (1,2) (0,2)
+
+    # 3 opt ------------------------------------------------------------------------------------
+    '''
+    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 20, axes=(0,1), reshape=True) # (0,1) (1,2) (0,2)
     rotated_vol = crop(rotated_vol, min_dim)
 
     projection_flat = np.array([np.sum(rotated_vol[x,y,:]) for x in range(rotated_vol.shape[0]) for y in range(rotated_vol.shape[1])])
@@ -112,15 +154,8 @@ for i in range(int(args.start), int(args.end)):
     projection = projection_flat.reshape(rotated_vol.shape[0],rotated_vol.shape[1])
 
     save_part(projection,f'{i}_3')
+    '''
 
-    rotated_vol = scipy.ndimage.interpolation.rotate(rot_vol, 50, axes=(0,1), reshape=True) # (0,1) (1,2) (0,2)
-    rotated_vol = crop(rotated_vol, min_dim)
-
-    projection_flat = np.array([np.sum(rotated_vol[x,y,:]) for x in range(rotated_vol.shape[0]) for y in range(rotated_vol.shape[1])])
-
-    projection = projection_flat.reshape(rotated_vol.shape[0],rotated_vol.shape[1])
-
-    save_part(projection,f'{i}_4')
 
     # plt.subplot(1,2,2)
     # plt.imshow(projection)
